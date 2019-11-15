@@ -8,6 +8,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
 ```
 
 ## Group Number 313:2
@@ -58,7 +59,9 @@ We have data for 8 countries ( USA, Great Britain, Canada, France, Russia, Mexic
 Here is a how US data looks like.
 
 ```{r read_data}
-us = read.csv("USvideos.csv")
+us = read.csv("USvideos.csv") %>%
+  select(-description)
+
 head(us)
 ```
 
@@ -66,5 +69,6 @@ head(us)
 
 - We are going to use readr/lubridate/tidyr to clean and restructure data.
 - For predicting the growth of channels we are going to use statistical models.
-
-
+- Using ggplot2 to make graphs showing patterns across different countries, dates, tags, likes/dislikes, etc.
+- Using regular expressions to look for certain keywords in the descriptions, tags, and titles of the videos.
+- Taking the ratios of likes to dislikes and see if there are any patterns with that. Maybe see if the relationship between likes and comments or dislikes and comments is stronger.
