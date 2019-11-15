@@ -1,0 +1,70 @@
+---
+title: "Final Project Proposal"
+date: "14/11/2019"
+output: html_document
+---
+
+# STAT 240 Final Project Proposal (Group: 313:2)
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Group Number 313:2
+
+## Members Present
+
+- Charles Saunders
+- Kelli Unruh
+- Adam Bauer
+- Krishna Jangid
+
+
+## Questions that motivate the study:
+
+- The top trending channels in each country
+- Most trending category over the year.
+- The relation between comments, categories, and likes.
+- Do more dislikes can also trend videos?
+- If there are comments disabled do people still like those videos.
+- Over years we can predict the grown of a particular channel through their trending video timelines.
+- Does a particular time of year also have particular tags?
+- For trending videos do they have any patterns in tags?
+- Over different countries can we predict common interests.
+- Patterns in the name for trending videos.
+
+
+## Data preview
+
+We have data for 8 countries ( USA, Great Britain, Canada, France, Russia, Mexico, Japan, and India) about top trending videos over 205 days in CSV and we have categories id referenced in JSON. There are 16 columns:
+
+- video_id: contains a unique id of the video (string)
+- trending_date: the date when this video was trending. (date)
+- title: title of that video (string)
+- channel_title: the channel name from where it was published (string)
+- category_id: id of category reference from JSON (number)
+- publish_time: time video was published (date)
+- tags: tags for the video (string)
+- views: # of views on that video (number)
+- likes: # of likes on that video (number)
+- dislikes: # of dislikes on that video (number)
+- comment_count: #of comments on that video (number)
+- thumbnail_link: thumbnail link of that video (string)
+- comments_disabled: are comments disabled on that video (bool)
+- ratings_disabled: are ratings disabled on that video (bool)
+- video_error_or_removed: is videos removed or there is an error (bool)
+- description: description of that videos (string) 
+
+Here is a how US data looks like.
+
+```{r read_data}
+us = read.csv("USvideos.csv")
+head(us)
+```
+
+## Methods 
+
+- We are going to use readr/lubridate/tidyr to clean and restructure data.
+- For predicting the growth of channels we are going to use statistical models.
+
+
