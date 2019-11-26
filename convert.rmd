@@ -1,0 +1,76 @@
+---
+title: "convert"
+author: "Krishna Jangid"
+date: "25/11/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(rmarkdown)
+library(rjson)
+library(jsonlite)
+library(ggplot2)
+library(dplyr)
+library(pander)
+library(stringr)
+```
+
+## R Markdown
+
+
+Type	Name	Latest commit message	Commit time
+
+RUvideos.csv	proposal_half_done	11 days ago
+
+```{r cars}
+ca_data <- read.csv("./CAvideos.csv")
+fr_data <- read.csv("./FRvideos.csv")
+gb_data <- read.csv("./GBvideos.csv")
+in_data <- read.csv("./INvideos.csv")
+jp_data <- read.csv("./JPvideos.csv")
+mx_data <- read.csv("./MXvideos.csv")
+ru_data <- read.csv("./RUvideos.csv")
+us_data <- read.csv("./USvideos.csv")
+
+library(rjson)
+
+ca_cat_json <- fromJSON("./CA_category_id.json")
+fr_cat_json <- fromJSON("./FR_category_id.json")
+gb_cat_json <- fromJSON("./GB_category_id.json")
+in_cat_json <- fromJSON("./IN_category_id.json")
+jp_cat_json <- fromJSON("./JP_category_id.json")
+mx_cat_json <- fromJSON("./MX_category_id.json")
+ru_cat_json <- fromJSON("./RU_category_id.json")
+us_cat_json <- fromJSON("./US_category_id.json")
+
+category_name = function(df, json) {
+  
+  category <-  as.data.frame(cbind(json[["items"]][["id"]], json[["items"]][["snippet"]][["title"]]))
+
+names(category) <- c("category_id","category_title")
+
+df <- merge(x = df, y = category, by = "category_id", all = "TRUE")
+
+}
+
+ca_data <- category_name(ca_data, ca_cat_json);
+fr_data <- category_name(fr_data, fr_cat_json);
+gb_data <- category_name(gb_data, gb_cat_json);
+in_data <- category_name(in_data, in_cat_json);
+jp_data <- category_name(jp_data, jp_cat_json);
+mx_data <- category_name(mx_data, mx_cat_json);
+ru_data <- category_name(ru_data, ru_cat_json);
+us_data <- category_name(us_data, us_cat_json);
+
+write.csv(ca_data, file = "./CAvideos.csv")
+write.csv(fr_data, file = "./FRvideos.csv")
+write.csv(gb_data, file = "./GBvideos.csv")
+write.csv(in_data, file = "./INvideos.csv")
+write.csv(jp_data, file = "./JPvideos.csv")
+write.csv(mx_data, file = "./MXvideos.csv")
+write.csv(ru_data, file = "./RUvideos.csv")
+write.csv(us_data, file = "./USvideos.csv")
+
+
+```
