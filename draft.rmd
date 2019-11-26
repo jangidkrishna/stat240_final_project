@@ -7,6 +7,11 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(stringr)
+library(splitstackshape)
+library(lubridate)
+library(plyr)
 ```
 
 ## Introduction
@@ -14,6 +19,99 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Background
 
 ## Analysis
+
+``` {r read_data}
+ca_data <- read.csv("./CAvideos.csv")
+fr_data <- read.csv("./FRvideos.csv")
+gb_data <- read.csv("./GBvideos.csv")
+in_data <- read.csv("./INvideos.csv")
+jp_data <- read.csv("./JPvideos.csv")
+mx_data <- read.csv("./MXvideos.csv")
+ru_data <- read.csv("./RUvideos.csv")
+us_data <- read.csv("./USvideos.csv")
+```
+
+```{r sep data}
+split_data = function(df) {
+  cSplit(df, "tags", sep="|") %>%
+    select(video_id, trending_date, starts_with("tags")) %>%
+    mutate(trending_date = ydm(trending_date)) %>%
+    gather(starts_with("tags"), key = "num", value = "tags") %>%
+    drop_na()
+}
+
+tidy_data = function(df) {
+  return( split_data(df) %>%
+              group_by(video_id) %>%
+              distinct(num, .keep_all = TRUE)
+        )
+}
+
+top_10 = function (df) {
+  df = df %>%
+    filter(!(tags == "[none]")) %>%
+    mutate(month = month(trending_date, label = TRUE))
+
+  temp = ddply(df,~tags,summarise,number_of_distinct=length(unique(video_id))) %>%
+    arrange(desc(number_of_distinct)) %>%
+    top_n(10, wt=number_of_distinct)
+
+  df = df[unlist(sapply(1:NROW(filter), function(i)
+    which(df$tags == temp$tags))),]
+  
+  return(df)
+}
+
+cumulative = function(df) {
+  df = tidy_data(df) 
+  df = top_10(df)
+  return(df)
+}
+
+plot = function(df) {
+  df %>%
+  mutate(month = month(trending_date, label = TRUE)) %>%
+  ggplot(aes(x = tags, colour = month)) +
+     geom_bar(position = "fill")
+}
+
+ca_data = cumulative(ca_data)
+plot(ca_data)
+fr_data = cumulative(fr_data)
+plot(fr_data)
+gb_data = cumulative(gb_data)
+plot(gb_data)
+in_data = cumulative(in_data)
+plot(in_data)
+jp_data = cumulative(jp_data)
+plot(jp_data)
+mx_data = cumulative(mx_data)
+plot(mx_data)
+ru_data = cumulative(ru_data)
+plot(ru_data)
+us_data = cumulative(us_data)
+plot(us_data)
+```
+
+```{r join}
+common_tags = function(df1, df1_name, df2, df2_name){
+  df1_temp = df1 %>%
+    ddply(~tags,summarise,number_of_occurence=length(unique(video_id)))
+  df2_temp = df2 %>%
+    ddply(~tags,summarise,number_of_occurence=length(unique(video_id)))
+  return(inner_join(df1_temp, df2_temp, by="tags", suffix = c(df1_name, df2_name)))
+}
+
+us_in_join = common_tags(us_data, "-us" , in_data, "-in")
+us_in_join
+ca_fr_join = common_tags(ca_data, "-ca", fr_data, "-fr")
+ca_fr_join
+ru_mx_join = common_tags(ru_data, "-ru", mx_data, "-mx")
+ru_mx_join
+jp_gb_join = common_tags(jp_data, "-jp", gb_data, "-gb")
+jp_gb_join
+
+```
 
 ## Discussion
 
