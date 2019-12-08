@@ -47,10 +47,11 @@ us_data = read_csv("USvideos.csv")
 
 ## Introduction
 
-YouTube is an American video-sharing platform that maintains a list of the top trending videos on the platform daily. YouTube uses a combination of factors including measuring user interactions (number of views, shares, comments, and likes). So using these interactions our primary goal is to analyze what factors affect how popular a YouTube video will be and if anyone desires to upload a Youtube video what factors can affect it to reach it's maximum so more people can view that video and gain more personal benefit from advertisement revenue. And statistical analysis over time which could also help in managing videos over a period of time.
+YouTube is an American video-sharing platform that maintains a list of the top trending videos on the platform daily. YouTube uses a combination of factors including measuring user interactions (number of views, shares, comments, and likes). So using these interactions our primary goal is to analyze what factors affect how popular a YouTube video will be and if anyone desires to upload a Youtube video what factors can affect it to reach it's maximum so more people can view that video and gain more personal benefit from advertisement revenue. And statistical analysis over time which could also help in managing videos over a period of time. The whole project is hosted on github here you can find all the project related files [https://github.com/jangidkrishna/stat240_final_project](https://github.com/jangidkrishna/stat240_final_project).
 
 ## Background
-
+We found our data set on kaggle [https://www.kaggle.com/datasnaek/youtube-new](https://www.kaggle.com/datasnaek/youtube-new).
+And since all the category tags were in a json to convert those we wrote another script **(convert.rmd)** to merge those jsons with respective category ids.
 We have data for 8 countries ( USA, Great Britain, Canada, France, Russia, Mexico, Japan, and India) about top trending videos over 205 days in CSV and we have categories id referenced in JSON. There are 16 columns:
 
 - video_id: contains a unique id of the video (string)
@@ -86,8 +87,8 @@ We have data for 8 countries ( USA, Great Britain, Canada, France, Russia, Mexic
 can = ca_data %>%
   select(channel_title, category_title, views, likes, dislikes, comment_count) %>%
   drop_na() %>%
-  group_by(category_title) %>%
-  summarize(likes = sum(likes)) %>%
+  dplyr::group_by(category_title) %>%
+  dplyr::summarize(likes = sum(likes)) %>%
   arrange(desc(likes)) %>%
   top_n(n=10) %>%
   print()
@@ -402,7 +403,7 @@ x = clickbait_parse(x)
 US = clickbait_parse(US)
 FR = clickbait_parse(FR)
 GB = clickbait_parse(GB)
-#IN = clickbait_parse(IN)
+CA = clickbait_parse(CA)
 MX = clickbait_parse(MX)
 ```
 
@@ -424,21 +425,21 @@ clickbait_sum = function(data){
 
 bind_clickbait_sums = function(){
   US_cbsum = clickbait_sum(US) %>%
-  mutate(country = "USA")
+   mutate(country = "USA")
   
   FR_cbsum = clickbait_sum(FR) %>%
-  mutate(country = "France")
+    mutate(country = "France")
   
   GB_cbsum = clickbait_sum(GB) %>%
-  mutate(country = "Great Britain")
+    mutate(country = "Great Britain")
   
   MX_cbsum = clickbait_sum(MX) %>%
-  mutate(country = "Mexico")
+    mutate(country = "Mexico")
   
-  clickbait_sums = US_cbsum %>%
-    bind_rows(FR_cbsum) %>%
-    bind_rows(GB_cbsum) %>%
-    bind_rows(MX_cbsum)
+  CA_cbsum = clickbait_sum(CA) %>%
+    mutate(country = "Canada")
+  
+  clickbait_sums = bind_rows(US_cbsum, FR_cbsum, GB_cbsum, MX_cbsum, CA_cbsum)
   
   return(clickbait_sums)
 }
@@ -570,8 +571,10 @@ bind_LV_tests = function(){
     mutate(country = "Great Britain")
   MX_LV = LV_test(MX) %>%
     mutate(country = "Mexico")
+  CA_LV = LV_test(CA) %>%
+    mutate(country = "Canada")
   
-  LV_tests = bind_rows(US_LV, FR_LV, GB_LV, MX_LV)
+  LV_tests = bind_rows(US_LV, FR_LV, GB_LV, MX_LV, CA_LV)
 
   return(LV_tests)
 }
@@ -586,8 +589,10 @@ bind_DV_tests = function(){
     mutate(country = "Great Britain")
   MX_DV = DV_test(MX) %>%
     mutate(country = "Mexico")
+  CA_DV = DV_test(CA) %>%
+    mutate(country = "Canada")
   
-  DV_tests = bind_rows(US_DV, FR_DV, GB_DV, MX_DV)
+  DV_tests = bind_rows(US_DV, FR_DV, GB_DV, MX_DV, CA_DV)
   
   return(DV_tests)
 }
@@ -598,15 +603,15 @@ DV_tests
 ```
 
 For the tests for a difference in the proportion of likes/view in clickbait vs. 
-non-clickbait videos in these 4 countries, our p-values are approximately 0, which are 
+non-clickbait videos in these 5 countries, our p-values are approximately 0, which are 
 highly statistically significant. We therefore have very convincing evidence that 
 the proportion of likes/view is higher for clickbait videos than for non-clickbait
-videos in those 4 countries.
+videos in those 5 countries.
 
 For the tests for a difference in the proportion of dislikes/view in clickbait vs. 
-non-clickbait videos in these 4 countries, our p-values are 0.475, 0.452, 0.407, and 0.450,
+non-clickbait videos in these 5 countries, our p-values are 0.475, 0.452, 0.407, and 0.450,
 non of which is statistically significant. We therefore do not have convincing evidence of 
-a difference in the proportion of dislikes/view for clickbait videos vs. non-clickbait videos in any of those 4 countries.
+a difference in the proportion of dislikes/view for clickbait videos vs. non-clickbait videos in any of those 5 countries.
 
 
 ### 6
@@ -632,13 +637,15 @@ bind_clickbait_cats = function(){
     mutate(country = "GB")
   MX_cats = clickbait_cats(MX) %>%
     mutate(country = "MX")
+  CA_cats = clickbait_cats(CA) %>%
+    mutate(country = "CA")
   
-  clickbait_cats = bind_rows(US_cats, FR_cats, GB_cats, MX_cats)
+  clickbait_cats = bind_rows(US_cats, FR_cats, GB_cats, MX_cats, CA_cats)
   
   return(clickbait_cats)
 }
 
-clickbait_cats = bind_clickbait_cats()
+clickbait_cats = bind_clickbait_cats() 
 clickbait_cats
 
 # overall
@@ -654,22 +661,24 @@ clickbait_cats %>%
   ggtitle("Prevalence of Clickbait in Video Categories")
 
 # compare categories within each country
+# fill = country is breaking
 ggplot(clickbait_cats, aes(x = category_id, y = 100*p_clickbait)) +
   geom_col(color = "black") +
   facet_wrap(~country) +
   xlab("Category ID") +
   ylab("Percent Clickbait") +
   ggtitle("Prevalence of Clickbait in Video Categories",
-          "among 4 Different Countries")
+          "among 5 Different Countries")
 
 # compare countries within each category
+# fill = country is breaking
 ggplot(clickbait_cats, aes(x = country, y = 100*p_clickbait)) +
   geom_col(color = "black") +
   facet_wrap(~category_id) +
   xlab("Category ID") +
   ylab("Percent Clickbait") +
   ggtitle("Prevalence of Clickbait in Video Categories",
-          "among 4 Different Countries")
+          "among 5 Different Countries")
 ```
 
 Video category 60 has clickbait much more frequently than the rest of the categories 
@@ -679,7 +688,8 @@ clickbait the least frequently (less than 3% of videos in those categories are c
 
 In most video categories, France and Mexico have clickbait videos more frequently. The 
 margin for this differs across categories, and it varies across categories whether France
-or Mexico has a higher clickbait frequency. 
+or Mexico has a higher clickbait frequency. In some categories, Canada has a higher frequency
+of clickbait as well.
 
 ### 7
 
@@ -954,6 +964,116 @@ us2 = us_data %>%
 ```
 
 The most popular category is news & politics which is trending in all 8 countries. The next most popular trending categories are science & technology, gaming, and howto & style which are all trending in 7 countries. Next - sports, education, and shows are all trending in 5 countries, and comedy is trending in 4. 
+
+
+### Tags
+
+``` {r read_data_tags, include=FALSE}
+
+library(plyr)
+ca_data <- read_csv("./CAvideos.csv") %>%
+  select(video_id, trending_date, tags)
+fr_data <- read_csv("./FRvideos.csv") %>%
+  select(video_id, trending_date, tags)
+gb_data <- read_csv("./GBvideos.csv") %>%
+  select(video_id, trending_date, tags)
+in_data <- read_csv("./INvideos.csv") %>%
+  select(video_id, trending_date, tags)
+jp_data <- read_csv("./JPvideos.csv") %>%
+  select(video_id, trending_date, tags)
+mx_data <- read_csv("./MXvideos.csv") %>%
+  select(video_id, trending_date, tags)
+ru_data <- read_csv("./RUvideos.csv") %>%
+  select(video_id, trending_date, tags)
+us_data <- read_csv("./USvideos.csv") %>%
+  select(video_id, trending_date, tags)
+```
+
+### 10
+
+> Does a particular time of year also have particular tags?
+
+```{r sep data, warning=FALSE}
+split_data = function(df) {
+  cSplit(df, "tags", sep="|") %>%
+    select(video_id, trending_date, starts_with("tags")) %>%
+    mutate(trending_date = ydm(trending_date)) %>%
+    gather(starts_with("tags"), key = "num", value = "tags") %>%
+    drop_na()
+}
+
+tidy_data = function(df) {
+  return( split_data(df) %>%
+              group_by(video_id) %>%
+              distinct(num, .keep_all = TRUE)
+        )
+}
+
+top_10 = function (df) {
+  df = df %>%
+    filter(!(tags == "[none]")) %>%
+    mutate(month = month(trending_date, label = TRUE))
+
+  temp = ddply(df,~tags,summarise,number_of_distinct=length(unique(video_id))) %>%
+    arrange(desc(number_of_distinct)) %>%
+    top_n(10, wt=number_of_distinct)
+
+  df = df[unlist(sapply(1:NROW(filter), function(i)
+    which(df$tags == temp$tags))),]
+  
+  return(df)
+}
+
+cumulative = function(df) {
+  df = tidy_data(df) 
+  df = top_10(df)
+  return(df)
+}
+
+plot = function(df) {
+  df %>%
+  mutate(month = month(trending_date, label = TRUE)) %>%
+  ggplot(aes(x = tags, colour = month)) +
+     geom_bar(position = "fill")
+}
+
+ca_data = cumulative(ca_data)
+plot(ca_data)
+fr_data = cumulative(fr_data)
+plot(fr_data)
+gb_data = cumulative(gb_data)
+plot(gb_data)
+in_data = cumulative(in_data)
+plot(in_data)
+mx_data = cumulative(mx_data)
+plot(mx_data)
+
+us_data = cumulative(us_data)
+plot(us_data)
+```
+
+### 11
+
+> For trending videos do they have any patterns in tags across countries?
+
+```{r join}
+common_tags = function(df1, df1_name, df2, df2_name){
+  df1_temp = df1 %>%
+    ddply(~tags,summarise,number_of_occurence=length(unique(video_id)))
+  df2_temp = df2 %>%
+    ddply(~tags,summarise,number_of_occurence=length(unique(video_id)))
+  return(inner_join(df1_temp, df2_temp, by="tags", suffix = c(df1_name, df2_name)))
+}
+
+in_fr_join = common_tags(fr_data, "-fr", in_data, "-in")
+in_fr_join
+ca_us_join = common_tags(ca_data, "-ca", us_data, "-us" )
+ca_us_join
+gb_mx_join = common_tags(gb_data, "-gb", mx_data, "-mx")
+gb_mx_join
+```
+
+
 
 ## Discussion
 
