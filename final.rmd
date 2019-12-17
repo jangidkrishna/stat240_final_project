@@ -1,0 +1,792 @@
+---
+title: "Trending Youtube Videos"
+author: "Group 313:2"
+date: "16/12/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(lubridate)
+library(stringr)
+library(splitstackshape)
+```
+
+```{r viridis-defaults, include=FALSE, eval=TRUE}
+## reset color defaults
+## Source https://data-se.netlify.com/2018/12/12/changing-the-default-color-scheme-in-ggplot2/
+#library(viridis)
+library(scales)
+
+#### continuous variables color and fill
+options(ggplot2.continuous.colour = "viridis")
+options(ggplot2.continuous.fill = "viridis")
+
+#### use viridis for discrete scales
+scale_colour_discrete <- scale_colour_viridis_d
+scale_fill_discrete <- scale_colour_viridis_d
+
+## reset default theme
+##theme_set(theme_minimal())
+```
+
+```{r read-data, warning=FALSE, include=FALSE}
+## Read and transform the data
+ca_data = read_csv("CAvideos.csv")
+fr_data = read_csv("FRvideos.csv")
+gb_data = read_csv("GBvideos.csv")
+in_data = read_csv("INvideos.csv")
+jp_data = read_csv("JPvideos.csv")
+mx_data = read_csv("MXvideos.csv")
+ru_data = read_csv("RUvideos.csv")
+us_data = read_csv("USvideos.csv")
+              
+```
+
+## Group Members
+
+Adam Bauer
+
+Kelli Unruh
+
+Charles Saunders
+
+Krishna Jangid
+
+## Introduction
+
+YouTube uses a combination of factors including measuring user interactions (number of views, shares, comments, and likes). Our goal is mainly to use these metrics to see if there are patterns in what videos trend in different countries, and see how these different metrics vary over trending videos.
+
+## Background
+
+We found our data set on Kaggle [https://www.kaggle.com/datasnaek/youtube-new](https://www.kaggle.com/datasnaek/youtube-new). One of the major problems we faced were that all the category tags were in a json. To convert those, we wrote another script **(convert.rmd)** to merge the jsons with respective category ids.
+We have data for 8 countries ( USA, Great Britain, Canada, France, Russia, Mexico, Japan, and India) about top trending videos over 205 days (Nov 2017 - June 2018) in CSV, and we have categories id referenced in JSON. There are 16 columns:
+
+- video_id: contains a unique id of the video (string)
+- trending_date: the date when this video was trending. (date)
+- title: title of that video (string)
+- channel_title: the channel name from where it was published (string)
+- category_id: id of category reference from JSON (number)
+- publish_time: time video was published (date)
+- tags: tags for the video (string)
+- views: # of views on that video (number)
+- likes: # of likes on that video (number)
+- dislikes: # of dislikes on that video (number)
+- comment_count: #of comments on that video (number)
+- thumbnail_link: thumbnail link of that video (string)
+- comments_disabled: are comments disabled on that video (bool)
+- ratings_disabled: are ratings disabled on that video (bool)
+- video_error_or_removed: is videos removed or there is an error (bool)
+- description: description of that videos (string) 
+
+## Analysis
+
+### Likes And Dislikes
+
+### 1
+
+> Which categories have the most likes?
+
+- Filter the data set to only include category, view, likes, dislikes, and comments (if any).
+-Determine which categories have the most likes by summing up the number of likes between each category and arranging them by number of likes 
+
+```{r problem-1, warning=FALSE}
+most_likes = function(data){
+  df = data %>%
+  select(category_title, views, likes, dislikes, comment_count) %>%
+  drop_na() %>%
+  dplyr::group_by(category_title) %>%
+  dplyr::summarize(likes = sum(likes)) %>%
+  arrange(desc(likes)) %>%
+  top_n(n=5)
+  
+  ggplot(df, aes(x=category_title,y=likes)) +
+  geom_col() +
+  ggtitle("Categories With The Most Likes") +
+  xlab("Category Title") +
+  ylab("Likes")
+}
+
+##Canada
+most_likes(ca_data)
+##US
+most_likes(us_data)
+##France
+most_likes(fr_data)
+## Mexico
+most_likes(mx_data)
+##Great Britain
+most_likes(gb_data)
+##India
+most_likes(in_data)
+## Japan
+most_likes(jp_data)
+## Russia
+most_likes(ru_data)
+
+
+## All combined
+all_countries = bind_rows(fr_data, ca_data, us_data, mx_data, jp_data, ru_data, in_data, gb_data)
+print("All Countries Combined")
+all_countries %>%
+  select(channel_title, category_title, views, likes, dislikes, comment_count) %>%
+  drop_na() %>%
+  dplyr::group_by(category_title) %>%
+  dplyr::summarize(likes = sum(likes)) %>%
+  arrange(desc(likes)) %>%
+  top_n(n=5)
+
+
+```
+
+In every country besides Great Britain and India, Music has the most likes out of all of the categories. It appears that there must be some missing data for Great Britain's music category, because it doesn't even fall into the top 10 categories while in every other country music and entertainment are at least top 3. This isn't surprising that these categories have the most likes because they are most often the less controversial videos with the least dislikes. Overall, music has the most likes by far, followed by Entertainment. The rest of the categories have much smaller numbers of likes. 
+
+### 2
+
+> Which categories have the most comments?
+
+-Repeat number 1 with comments
+
+```{r problem-2}
+most_comments = function(data){
+  df = data %>%
+  select(channel_title, category_title, views, likes, dislikes, comment_count) %>%
+  drop_na() %>%
+  dplyr::group_by(category_title) %>%
+  dplyr::summarize(comment_count = sum(comment_count)) %>%
+  arrange(desc(comment_count)) %>%
+  top_n(n=5) 
+  
+  ggplot(df, aes(x=category_title,y=comment_count)) +
+  geom_col() +
+  ggtitle("Categories With The Most Comments") +
+  xlab("Category Title") +
+  ylab("Comments")
+}
+
+##Canada
+most_comments(ca_data)
+##US
+most_comments(us_data)
+##France
+most_comments(fr_data)
+## Mexico
+most_comments(mx_data)
+##Great Britain
+most_comments(gb_data)
+##India
+most_comments(in_data)
+## Japan
+most_comments(jp_data)
+## Russia
+most_comments(ru_data)
+
+# All countries combined
+print("All Countries Combined")
+all_countries %>%
+  select(channel_title, category_title, views, likes, dislikes, comment_count) %>%
+  drop_na() %>%
+  dplyr::group_by(category_title) %>%
+  dplyr::summarize(comment_count = sum(comment_count)) %>%
+  arrange(desc(comment_count)) %>%
+  top_n(n=5)%>%
+  print()
+```
+
+Similar the the earlier question, Music and Entertainment have a consistent presence in the top 3 categories. People & Blogs is also a common category in the top 3. This is most likely due to the more interactive relationship between the youtubers and their audience in this category.
+
+### 3
+
+> Are there any trending videos with more dislikes than likes? If so, how many? What categories are most common in this case?
+
+```{r problem-3}
+more_dislikes = function(data){
+  df = data %>%
+  select(channel_title, category_title, views, likes, dislikes, comment_count) %>%
+  drop_na() %>%
+  dplyr::filter(dislikes>likes) %>%
+  dplyr::group_by(category_title) %>%
+  dplyr::summarize(n=n()) %>%
+  arrange(desc(n)) %>%
+    top_n(n=5)
+
+ggplot(df, aes(x=category_title,y=n)) +
+  geom_col() +
+  ggtitle("Trending Videos With More Dislikes Than Likes") +
+  xlab("Category Title") +
+  ylab("Videos")
+}
+
+##Canada
+more_dislikes(ca_data)
+##US
+more_dislikes(us_data)
+##France
+more_dislikes(fr_data)
+## Mexico
+more_dislikes(mx_data)
+##Great Britain
+more_dislikes(gb_data)
+##India
+more_dislikes(in_data)
+## Japan
+more_dislikes(jp_data)
+## Russia
+more_dislikes(ru_data)
+
+```
+
+This chunk of code shows us the categories with the most tending videos that have more dislikes than likes. News & Politics seems to be the category most often in the top 3. Entertainment is also included very often. This also is reasonable because News & Politics is one of the most controversial topics.
+
+### Clickbait
+
+We generally defined clickbait as any video with a title meeting any of the following criteria: it contains no lowercase letters, it contains 8 or more characters in a row that are either whitespace, an exclamation point, or a capital letter, or it contains a "?!" or "!?". There are a few exceptions to these rules, but those are not too common.
+
+```{r data, include=FALSE}
+read_select = function(x){
+  df = read_csv(x) %>%
+    select(-c(video_id, thumbnail_link, ratings_disabled, video_error_or_removed)) %>%
+    mutate(trending_date = ydm(trending_date),
+           publish_time = ymd_hms(publish_time)) %>%
+    drop_na()
+  
+  return(df)
+}
+
+US = read_select("USvideos.csv")
+CA = read_select("CAvideos.csv")
+# DE = read_select("DEvideos.csv")
+FR = read_select("FRvideos.csv")
+GB = read_select("GBvideos.csv")
+IN = read_select("INvideos.csv")
+JP = read_select("JPvideos.csv")
+# KR = read_select("KRvideos.csv")
+MX = read_select("MXvideos.csv")
+RU = read_select("RUvideos.csv")
+
+alladem = bind_rows(US, CA, FR, GB, IN, JP, MX, RU)
+```
+
+```{r clickbait_function}
+# things that could get caught by clickbait unfairly
+deceptive = "BREAKING|CONAN|SPOILERS|IFC Films|RIVERDALE|PRESHOW|WIRED"
+
+clickbait_parse = function(df){
+  df = df %>%
+    mutate(clickbait = case_when(
+      str_detect(title, deceptive) ~ FALSE,
+      str_detect(title, "^\\d+$") ~ FALSE,
+      str_detect(title, "^[^a-z]+$") ~ TRUE,
+      str_detect(title, "[A-Z\\s!]{8,}") ~ TRUE,
+      str_detect(title, "\\? ?!") ~ TRUE,
+      str_detect(title, "! ?\\?") ~ TRUE,
+      TRUE ~ FALSE
+    ))
+  return(df)
+}
+
+# may have to figure out other languages later
+US = clickbait_parse(US)
+FR = clickbait_parse(FR)
+GB = clickbait_parse(GB)
+CA = clickbait_parse(CA)
+MX = clickbait_parse(MX)
+```
+
+### 4
+
+> How prevalent is clickbait? How do the average number of views vary?
+
+```{r clickbait_views}
+clickbait_sum = function(data){
+  df = data %>%
+  dplyr::group_by(clickbait) %>%
+  dplyr::summarize(n = n(),
+            total_views = sum(views),
+            average_views = mean(views)) %>%
+  mutate(percent = n / sum(n))
+  
+  return(df)
+}
+
+bind_clickbait_sums = function(){
+  US_cbsum = clickbait_sum(US) %>%
+   mutate(country = "USA")
+  
+  FR_cbsum = clickbait_sum(FR) %>%
+    mutate(country = "France")
+  
+  GB_cbsum = clickbait_sum(GB) %>%
+    mutate(country = "Great Britain")
+  
+  MX_cbsum = clickbait_sum(MX) %>%
+    mutate(country = "Mexico")
+  
+  CA_cbsum = clickbait_sum(CA) %>%
+    mutate(country = "Canada")
+  
+  clickbait_sums = bind_rows(US_cbsum, FR_cbsum, GB_cbsum, MX_cbsum, CA_cbsum)
+  
+  return(clickbait_sums)
+}
+
+clickbait_sums = bind_clickbait_sums() %>%
+  select(country, everything())
+clickbait_sums
+```
+
+Clickbait seems to be the more prevalent in France and Mexico (about 40% of trending videos are clickbait) and less prevalent in the US and Great Britain (about 20% of trending videos are clickbait).
+
+### 5
+
+> How well do people receive clickbait? 
+
+#### Hypothesis Tests for difference in Likes/(Likes + Dislikes)
+
+$$
+H_0: p_C = p_N \\
+H_A: p_C \neq p_N
+$$
+
+```{r Lprop_test_functions}
+Lprop_test = function(data, type = "clickbait"){
+  df = clickbait_parse(data)
+  
+  cb_L = df %>%
+    group_by(clickbait) %>%
+    summarize(n = n(),
+              p_L = sum(likes) / (sum(likes) + sum(dislikes)) )
+  
+  comm_L = df %>%
+    group_by(comments_disabled) %>%
+    summarize(n = n(),
+              p_L = sum(likes) / (sum(likes) + sum(dislikes)) )
+  
+  if(type == "comments") {
+    use = comm_L 
+  } else{
+    use = cb_L
+  }
+  
+  # values for clickbait vids (or comments disabled vids)
+  p1 = use$p_L[2]
+  n1 = use$n[2]
+  # values for non-clickbait vids (or comments enabled vids)
+  p2 = use$p_L[1]
+  n2 = use$n[1]
+  # combinationy
+  p_pool = ((p1*n1) + (p2*n2)) / (n1 + n2)
+  se_diff = sqrt( p_pool*(1-p_pool) * (1/n1 + 1/n2) )
+
+  z_L = (p1 - p2) / se_diff
+  p_L = 1 - pnorm(abs(z_L))
+  
+  if(type == "comments"){
+    result = tibble(
+      enabled_Lprop_greater = z_L < 0,
+      z_score = abs(z_L),
+      p_value = p_L
+    )
+  } else{
+    result = tibble(
+      cb_Lprop_greater = z_L > 0,
+      z_score = abs(z_L),
+      p_value = p_L
+    )
+  }
+  
+  return(result)
+}
+
+bind_Lprop_tests = function(){
+  US_L = Lprop_test(US) %>%
+    mutate(country = "USA")
+  FR_L = Lprop_test(FR) %>%
+    mutate(country = "France")
+  GB_L = Lprop_test(GB) %>%
+    mutate(country = "Great Britain")
+  MX_L = Lprop_test(MX) %>%
+    mutate(country = "Mexico")
+  CA_L = Lprop_test(CA) %>%
+    mutate(country = "Canada")
+  
+  Lprop_tests = bind_rows(US_L, FR_L, GB_L, MX_L, CA_L)
+
+  return(Lprop_tests)
+}
+Lprop_tests = bind_Lprop_tests()
+
+Lprop_tests
+```
+
+For the tests for a difference in the proportion of likes/(likes + dislikes) in clickbait vs 
+non-clickbait videos in these 5 countries, our p-values are approximately 0, which are 
+highly statistically significant. We therefore have very convincing evidence that 
+the proportion of likes/(likes + dislikes) is higher for clickbait videos than for
+non-clickbait videos in those 5 countries.
+
+This means that out of the people that feel strongly enough about a video to either like it or dislike it, a higher proportion
+of people like clickbait videos than like non-clickbait videos. 
+
+
+### 6
+
+> Which categories are clickbait the most frequently in each country?
+
+```{r clickbait_categories}
+clickbait_cats = function(data){
+  df = clickbait_parse(data) %>%
+    mutate(category_id = as.character(category_id)) %>%
+    dplyr::group_by(category_title) %>%
+    dplyr::summarize(n = n(),
+              n_clickbait = sum(clickbait),
+              p_clickbait = n_clickbait / n)
+}
+
+bind_clickbait_cats = function(){
+  US_cats = clickbait_cats(US) %>%
+    mutate(country = "US")
+  FR_cats = clickbait_cats(FR) %>%
+    mutate(country = "FR")
+  GB_cats = clickbait_cats(GB) %>%
+    mutate(country = "GB")
+  MX_cats = clickbait_cats(MX) %>%
+    mutate(country = "MX")
+  CA_cats = clickbait_cats(CA) %>%
+    mutate(country = "CA")
+  
+  clickbait_cats = bind_rows(US_cats, FR_cats, GB_cats, MX_cats, CA_cats)
+  
+  return(clickbait_cats)
+}
+
+clickbait_cats = bind_clickbait_cats() 
+
+# overall
+clickbait_cats %>%
+  dplyr::group_by(category_title) %>%
+  dplyr::summarize(n = sum(n),
+            n_clickbait = sum(n_clickbait),
+            p_clickbait = n_clickbait / n) %>%
+  ggplot(aes(x = category_title, y = 100*p_clickbait)) +
+  geom_col(color = "black", fill = "green") +
+  xlab("Category") +
+  ylab("Percent Clickbait") +
+  ggtitle("Prevalence of Clickbait in Video Categories") +
+  coord_flip()
+
+# compare categories within each country
+# fill = country is breaking
+ggplot(clickbait_cats, aes(x = category_title, y = 100*p_clickbait)) +
+  geom_col(color = "black") +
+  facet_wrap(~country) +
+  xlab("Category") +
+  ylab("Percent Clickbait") +
+  ggtitle("Prevalence of Clickbait in Video Categories",
+          "among 5 Different Countries") +
+  coord_flip()
+```
+
+Movies, how-to & style, gaming, and travel & events tend to be clickbait the most frequently. A typical frequency of clickbait for a video category would be around 20-40%, with categories trailers, nonprofits/activism, and shows having clickbait the least frequently (less than 3% of videos in those categories are clickbait.)
+
+In most video categories, France and Mexico have clickbait videos more frequently. The margin for this differs across categories, and it varies across categories whether France or Mexico has a higher clickbait frequency. In some categories, Canada has a higher frequency of clickbait as well.
+
+
+### Trending Channels and Categories
+
+### 7
+
+> Do the same channels trend in each country? 
+
+- Filter each data set to include only channel titles and views.
+- Determine the top 10 channels that trend in each country by summing up the views and arranging them by number of views. 
+
+```{r question-7, warning=FALSE}
+channel_trend = function(data){
+  df = data %>%
+  select(channel_title, views) %>%
+  drop_na() %>%
+  group_by(channel_title) %>%
+  summarize(views = sum(views)) %>%
+  arrange(desc(views)) %>%
+  top_n(n=10) %>%
+  print()
+}
+
+## Canada
+channel_trend(ca_data)
+## France
+channel_trend(fr_data)
+## Great Britain
+channel_trend(gb_data)
+## India
+channel_trend(in_data)
+## Japan
+channel_trend(jp_data)
+## Mexico
+channel_trend(mx_data)
+## Russia
+channel_trend(ru_data)
+## USA
+channel_trend(us_data)
+```
+
+After comparing the top 10 most popular trending channels in each of the 8 countries, we found that there are no channels that trend in the top 10 of every country.  There are a couple channels that trend in more than one country.  Marvel Entertainment trends in 7 of the countries, making it the most popular amongst all 8 countries. The next most popular channel is ibighit, trending in 6 countries. Dude Perfect trends in 5, and PewDiePie, Sony Pictures Entertainment, and ChildishGambinoVEVO all trend in 4.  To better compare trending channels, we took the 6 most popular trending channels amongst the countries and plotted them below. 
+
+```{r trending-channels-plot}
+channel_trend2 = function(data){
+    df = data %>%
+  select(channel_title, views) %>%
+  drop_na() %>%
+  group_by(channel_title) %>%
+  summarize(views = sum(views)) %>%
+      top_n(n=10)
+}
+
+bind_channel_trend2 = function(){
+  US_channel = channel_trend2(us_data) %>%
+    mutate(country = "US")
+  FR_channel = channel_trend2(fr_data) %>%
+    mutate(country = "FR")
+  GB_channel = channel_trend2(gb_data) %>%
+    mutate(country = "GB")
+  MX_channel = channel_trend2(mx_data) %>%
+    mutate(country = "MX")
+  RU_channel = channel_trend(ru_data) %>%
+    mutate(country = "RU")
+  CA_channel = channel_trend2(ca_data) %>%
+    mutate(country = "CA")
+  IN_channel = channel_trend2(in_data) %>%
+    mutate(country = "IN")
+  JP_channel = channel_trend2(jp_data) %>%
+    mutate(country = "JP")
+  
+
+  channel_trend2 = bind_rows(US_channel, FR_channel, GB_channel, MX_channel, 
+                             CA_channel, IN_channel, JP_channel, RU_channel)
+  
+  return(channel_trend2)
+}
+
+channel_trend2 = bind_channel_trend2()
+
+channel_trend3 = channel_trend2 %>%
+  filter(channel_title == 'Marvel Entertainment' | 
+           (channel_title == 'PewDiePie') | 
+           (channel_title == 'Dude Perfect') | 
+           (channel_title == 'ibighit') | 
+           (channel_title == 'Sony Pictures Entertainment') | 
+           (channel_title == 'ChildishGambinoVEVO'))
+
+# plot comparing popular channels among the 8 countries 
+ggplot(channel_trend3, aes(x = country, y = views)) +
+  geom_col(fill = "red", color = "black") +
+  facet_wrap(~channel_title) +
+  xlab("Country") +
+  ylab("Number of Views") +
+  ggtitle("Popularity of Trending Channels Between Countries")
+```
+
+As noted before, there are no channels that trend in all 8 countries.  As visualized in this graph, Marvel Entertainment trends in most of the countries.  ChildishGambinoVEVO trends in the smallest number of countries, but has the most views from a single country (Great Britain).  Overall, the channels that trend in 4 or more countries do not have a relatively large total number of views, with the exception of Marvel Entertainment.  As shown by the graph, there does not look to be any pattern between the popularity of trending channels among the different countries.  This makes sense because different countries are going to have different interests and their own individual trends. 
+
+### 8
+
+> Do the same categories trend in each country? 
+
+- Same steps at question 7, but with categories instead of channels. 
+
+```{r question-8, warning=FALSE}
+category_trend = function(data){
+  df = data %>%
+  select(category_title, views) %>%
+  drop_na() %>%
+  group_by(category_title) %>%
+  summarize(views = sum(views)) %>%
+  arrange(desc(views)) %>%
+  top_n(n=10) %>%
+    print()
+}
+
+## Canada
+category_trend(ca_data)
+## France
+category_trend(fr_data)
+## Great Britain
+category_trend(gb_data)
+## India
+category_trend(in_data)
+## Japan
+category_trend(jp_data)
+## Mexico
+category_trend(mx_data)
+## Russia
+category_trend(ru_data)
+## USA
+category_trend(us_data)
+
+```
+
+After comparing the top 10 categories in each country, we found that the same categories trend in almost every country.  Music and Entertainment are the top two most popular categories, by far, in every single country we have data for.  Other categories that trend in the top 10 of all 8 countries, in no particular order, include Comedy, Film & Animation, Howto & Style, News & Politics, People & Blogs, Science & Technology, and Sports. This means that 9 out of the top 10 trending categories for each country also trend in the other countries.  The graph below shows a visual of the popularity of these categories.  We omitted Music and Enterianment from this graph since both of those categories' views are so high that they made it difficult to compare the other categories on the graph because you could barely see the views in the bar graph.  
+
+```{r trending-categories-plot, include=FALSE}
+category_trend2 = function(data){
+  df = data %>%
+  select(category_title, views) %>%
+  drop_na() %>%
+  group_by(category_title) %>%
+  summarize(views = sum(views)) %>%
+  top_n(n=10)
+}
+
+bind_category_trend2 = function(){
+  US_category = category_trend2(us_data) %>%
+    mutate(country = "US")
+  FR_category = category_trend2(fr_data) %>%
+    mutate(country = "FR")
+  GB_category = category_trend2(gb_data) %>%
+    mutate(country = "GB")
+  MX_category = category_trend2(mx_data) %>%
+    mutate(country = "MX")
+  RU_category = category_trend(ru_data) %>%
+    mutate(country = "RU")
+  CA_category = category_trend2(ca_data) %>%
+    mutate(country = "CA")
+  IN_category = category_trend2(in_data) %>%
+    mutate(country = "IN")
+  JP_category = category_trend2(jp_data) %>%
+    mutate(country = "JP")
+
+  category_trend2 = bind_rows(US_category, FR_category, GB_category, MX_category, 
+                             CA_category, IN_category, JP_category, RU_category)
+  
+  return(category_trend2)
+}
+
+category_trend2 = bind_category_trend2()
+
+category_trend3 = category_trend2 %>%
+  filter(category_title == 'Comedy' | 
+           (category_title == 'Film & Animation') | 
+           (category_title == 'Howto & Style') | 
+           (category_title == 'People & Blogs') | 
+           (category_title == 'Science & Technology') |
+           (category_title == 'Sports'))
+         
+
+# plot comparing popular categories among the 8 countries 
+ggplot(category_trend3, aes(x = country, y = views)) +
+  geom_col(fill = "red", color = "black") +
+  facet_wrap(~category_title) +
+  xlab("Country") +
+  ylab("Number of Views") +
+  ggtitle("Popularity of Trending Categories Between Countries")
+
+```
+
+While not on the graph, we know that Music and Entertainment are by far the most popular categories, with their total number of views being much larger than the other trending categories. The rest of the categories, while trending in all countries, have overall much fewer views.  Comparing the rest of the 6 countries in the graph above, it looks like the two least popular categories are Howto & Style and Science & Technology.  Overall, our findings indicate that the majority of categories trend in every country.  With the exception of Music and Entertainment, the other 6 trending categories do not trend in any particular order.   
+
+Another interesting finding is that Japan, Mexico, and Russia all have the least number of views in every category, implying that these countries may watch less YouTube overall compared to the other 5 countries.  
+
+### Tags
+
+``` {r read_data_tags, include=FALSE}
+
+library(plyr)
+ca_data <- read_csv("./CAvideos.csv") %>%
+  select(video_id, trending_date, tags)
+fr_data <- read_csv("./FRvideos.csv") %>%
+  select(video_id, trending_date, tags)
+gb_data <- read_csv("./GBvideos.csv") %>%
+  select(video_id, trending_date, tags)
+in_data <- read_csv("./INvideos.csv") %>%
+  select(video_id, trending_date, tags)
+jp_data <- read_csv("./JPvideos.csv") %>%
+  select(video_id, trending_date, tags)
+mx_data <- read_csv("./MXvideos.csv") %>%
+  select(video_id, trending_date, tags)
+ru_data <- read_csv("./RUvideos.csv") %>%
+  select(video_id, trending_date, tags)
+us_data <- read_csv("./USvideos.csv") %>%
+  select(video_id, trending_date, tags)
+```
+
+### 9
+
+> Does a particular time of year also have particular tags?
+
+```{r sep data, warning=FALSE}
+split_data = function(df) {
+  cSplit(df, "tags", sep="|") %>%
+    select(video_id, trending_date, starts_with("tags")) %>%
+    mutate(trending_date = ydm(trending_date)) %>%
+    gather(starts_with("tags"), key = "num", value = "tags") %>%
+    drop_na()
+}
+
+tidy_data = function(df) {
+  return( split_data(df) %>%
+              group_by(video_id) %>%
+              distinct(num, .keep_all = TRUE)
+        )
+}
+
+top_10 = function (df) {
+  df = df %>%
+    filter(!(tags == "[none]")) %>%
+    mutate(month = month(trending_date, label = TRUE))
+
+  temp = ddply(df,~tags,summarise,number_of_distinct=length(unique(video_id))) %>%
+    arrange(desc(number_of_distinct)) %>%
+    top_n(10, wt=number_of_distinct)
+
+  df = df[unlist(sapply(1:NROW(filter), function(i)
+    which(df$tags == temp$tags))),]
+  
+  return(df)
+}
+
+cumulative = function(df) {
+  df = tidy_data(df) 
+  df = top_10(df)
+  return(df)
+}
+
+plot = function(df, country_name) {
+  title = paste("Tags over the year in", country_name)
+  df %>%
+  mutate(month = month(trending_date, label = TRUE)) %>%
+  ggplot(aes(x = tags, colour = month)) +
+    geom_bar(position = "dodge") +
+    xlab("Top 10 tags in the country") + 
+    ylab("Frequency of each tag every month") + 
+    ggtitle(title)
+}
+
+
+ca_data = cumulative(ca_data)
+plot(ca_data, "Canada")
+fr_data = cumulative(fr_data)
+plot(fr_data, "France")
+gb_data = cumulative(gb_data)
+plot(gb_data, "Great Britain")
+in_data = cumulative(in_data)
+plot(in_data, "India")
+mx_data = cumulative(mx_data)
+plot(mx_data, "Mexico")
+us_data = cumulative(us_data)
+plot(us_data, "USA")
+
+```
+
+We excluded Japan and Russia from our tags analysis because of language restrictions since both the countries have tending videos with Japanese and Russian language and since they don't comply with the rest of our countries and provide no insight we have to exclude them. As we can see "funny" and "music" tags trends all over the year and in almost all of the countries. And there is one more interesting behavior that the year tag also starts to trend at the start and end of the year due to the obvious reason for the new year and year-end. So according to the graphs above we can conclude that there is a high probability over other tags that if you have tags like funny and music your video will trend over other videos who don't have that tag.
+
+## Discussion
+
+Overall, across countries, there are many similarities about videos that are trending. The categories with the most likes and comments are similar, with music videos often being very popular. Videos about news and politics are often controversial in different countries too. In the 5 countries examined, clickbait videos tend to receive more likes/(likes+dislikes) than non-clickbait videos. This would indicate that trending clickbait videos are fairly well received in all of these countries. Additionally, many popular channels have many trending videos in more than one country, such as Marvel, Dude Perfect, and PewDiePie. Many popular video categories trend in most or all of the countries examined too, but there is variation in this trend.
+
+There are also many differences about trending videos across countries. For example, trending videos in France and Mexico tend to be clickbait more frequently than trending videos in the US, UK, and Canada. While many channels are trendy in lots of countries, there were no channels that were in the top 10 for trending videos in all of the countries we looked at, so there is still some variation in terms of which channels are the most popular around the world.
+
+One shortcoming of this analysis is that it uses likes and dislikes to determine whether or not a video is well received. This can be misleading because in order to like or dislike a video, a YouTube account is required, but it is possible to watch the video without an account. Most videos have many more views than likes and dislikes combined, and many people do not click like or dislike on videos, so they may be an inaccurate way to really determine whether or not most people watching a video enjoy it. We used this metric when analyzing whether or not people liked clickbait and when finding the categories with the most likes or more dislikes than likes. Another shortcoming is that our analysis for clickbait is all in terms of English, which makes it especially difficult to analyze videos in Russia, India, and Japan which often use non-English characters. We therefore excluded those countries from our clickbait analysis. It also could affect other countries if they have trending videos with non-English characters in the title.
+
+
